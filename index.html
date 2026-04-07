@@ -105,11 +105,44 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loading-text { font-weight: 900; color: var(--green-mid); font-size: 16px; letter-spacing: 1px; }
 
+        /* --- TRANG KẾT QUẢ --- */
+        #result-screen { background: #f4fdf8; padding-top: 40px; }
+        .res-header { width: 90%; display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--green-dark); margin-bottom: 20px; font-size: 18px; z-index: 5;}
+        .res-back { cursor: pointer; color: var(--green-dark); font-size: 16px; }
+        
+        .res-card { background: white; width: 85%; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 15px; position: relative; z-index: 5; border: 1px solid #e0f2f1;}
+        .res-title { font-size: 24px; font-weight: 900; color: #1f2937; margin: 0 0 10px 0; }
+        
+        .res-badge { display: inline-block; padding: 6px 18px; border-radius: 20px; font-weight: 900; color: white; margin-bottom: 25px; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);}
+        .badge-cao { background: #ef4444; } /* Đỏ */
+        .badge-tb { background: #f59e0b; }  /* Vàng */
+        .badge-thap { background: #10b981; } /* Xanh */
+        
+        /* Thanh đo Carbon */
+        .res-scale-container { position: relative; margin-top: 15px; }
+        .scale-bar { width: 100%; height: 14px; border-radius: 10px; background: linear-gradient(to right, #10b981, #f59e0b, #ef4444); position: relative; }
+        .scale-indicator { position: absolute; top: -6px; width: 4px; height: 26px; background: #1f2937; border-radius: 2px; transition: left 0.5s ease; }
+        .scale-labels { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-top: 8px; color: #4b5563; }
+        .scale-labels span:nth-child(1) { color: #10b981; }
+        .scale-labels span:nth-child(2) { color: #f59e0b; }
+        .scale-labels span:nth-child(3) { color: #ef4444; }
+        
+        .res-tip-title { font-size: 17px; font-weight: 900; color: var(--green-dark); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;}
+        .res-tip-text { font-size: 15px; color: #374151; line-height: 1.5; font-weight: 700;}
+        
+        /* Nút hành động */
+        .res-actions { display: flex; gap: 12px; width: 85%; margin-top: 10px; z-index: 5;}
+        .btn-res { flex: 1; padding: 14px 0; border: none; border-radius: 25px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: 'Nunito', sans-serif;}
+        .btn-res-scan { background: #0f766e; color: white; box-shadow: 0 6px 15px rgba(15, 118, 110, 0.3); }
+        .btn-res-detail { background: #fef08a; color: #854d0e; box-shadow: 0 6px 15px rgba(254, 240, 138, 0.5); }
+
     </style>
+
 </head>
 <body>
 
     <div class="phone">
+        
         <div id="home-screen" class="screen active">
             <div class="leaf leaf-tl"></div> <div class="leaf leaf-tr"></div>
             <div class="leaf leaf-ml"></div> <div class="leaf leaf-br"></div>
@@ -145,9 +178,9 @@
             </div>
 
             <div class="bottom-nav">
-                <div class="nav-link"><span class="nav-icon">📖</span>Hướng dẫn</div>
-                <div class="nav-link"><span class="nav-icon">🕒</span>Lịch sử</div>
-                <div class="nav-link"><span class="nav-icon">⚙️</span>Cài đặt</div>
+               <div class="nav-link">
+                    <img src="logo.png" alt="" style="width: 40px; height: 40px;">
+                </div>
             </div>
         </div>
 
@@ -176,15 +209,56 @@
             <button class="btn-capture" onclick="predict()">QUÉT 📷</button>
             <div id="toast"></div>
         </div>
-    </div>
 
-    <script>
+        <div id="result-screen" class="screen">
+            <div class="leaf leaf-tl"></div> <div class="leaf leaf-tr"></div> 
+            
+            <div class="res-header">
+                <div class="res-back" onclick="goToScan()">❮ Kết quả phân tích</div>
+                <div>⭐</div>
+            </div>
+
+            <div class="res-card">
+                <h2 class="res-title" id="res-name">Tên sản phẩm</h2>
+                <div class="res-badge" id="res-badge">Carbon: Đang xử lý</div>
+                
+                <div class="res-scale-container">
+                    <div class="scale-bar">
+                        <div class="scale-indicator" id="res-indicator" style="left: 50%;"></div>
+                    </div>
+                    <div class="scale-labels">
+                        <span>Thấp</span><span>TB</span><span>Cao</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="res-card">
+                <div class="res-tip-title">🌿 Eco-tip:</div>
+                <div class="res-tip-text" id="res-tip">Lời khuyên sẽ hiển thị ở đây...</div>
+            </div>
+
+            <div class="res-actions">
+                <button class="btn-res btn-res-scan" onclick="goToScan()">📞 Quét lại</button>
+                <button class="btn-res btn-res-detail">Xem chi tiết</button>
+            </div>
+        </div>
+
+    </div> <script>
         const MODEL_URL = "https://teachablemachine.withgoogle.com/models/qePPB6ZMw/";
 
         const ecoData = {
-            "Hop_xop": { ten: "Hộp xốp", carbon: "CAO 🔴", tip: "Khó phân hủy. Hãy chọn hộp bã mía thay thế!" },
-            "Binh_Inox_giu_nhiet": { ten: "Bình Inox", carbon: "THẤP 🟢", tip: "Dùng bình cá nhân giúp giảm ngàn chai nhựa!" },
-            "Hop_sua_chua": { ten: "Hộp sữa chua", carbon: "TRUNG BÌNH 🟡", tip: "Hãy rửa sạch và bỏ vào thùng rác tái chế." }
+            "Hop_xop": { 
+                ten: "Hộp xốp", level: "CAO", cssClass: "badge-cao", percent: "90%", 
+                tip: "Khó phân hủy. Hãy chọn hộp bã mía thay thế!" 
+            },
+            "Binh_Inox_giu_nhiet": { 
+                ten: "Bình Inox", level: "THẤP", cssClass: "badge-thap", percent: "10%", 
+                tip: "Dùng bình cá nhân giúp giảm ngàn chai nhựa!" 
+            },
+            "Hop_sua_chua": { 
+                ten: "Hộp sữa chua", level: "TRUNG BÌNH", cssClass: "badge-tb", percent: "50%", 
+                tip: "Hãy rửa sạch và bỏ vào thùng rác tái chế." 
+            }
         };
 
         let model = null;
@@ -240,6 +314,10 @@
 
         async function goToScan() {
             document.getElementById('home-screen').classList.remove('active');
+            
+            // TẮT MÀN HÌNH KẾT QUẢ KHI QUÉT LẠI
+            document.getElementById('result-screen').classList.remove('active'); 
+            
             document.getElementById('scan-screen').classList.add('active');
             resultText.style.display = 'none';
             resultText.textContent = '';
@@ -252,6 +330,7 @@
             stopCamera();
             resultText.style.display = 'none';
             document.getElementById('scan-screen').classList.remove('active');
+            document.getElementById('result-screen').classList.remove('active');
             document.getElementById('home-screen').classList.add('active');
         }
 
@@ -278,13 +357,24 @@
                     // 2. Tắt giao diện đang tải
                     overlay.style.display = 'none';
 
-                    // 3. Hiển thị kết quả
+                    // 3. Hiển thị lên Màn hình kết quả mới
                     if (info) {
-                        resultText.innerHTML = `🌿 <strong>${info.ten}</strong><br>Carbon: ${info.carbon}<br>💡 ${info.tip}<br><small style="color:#888">(Độ chắc chắn: ${percent}%)</small>`;
+                        document.getElementById('res-name').textContent = info.ten;
+                        document.getElementById('res-badge').textContent = `Carbon: ${info.level}`;
+                        document.getElementById('res-badge').className = `res-badge ${info.cssClass}`;
+                        document.getElementById('res-indicator').style.left = info.percent;
+                        document.getElementById('res-tip').textContent = info.tip;
                     } else {
-                        resultText.innerHTML = `🔍 Nhận diện: <strong>${best.className}</strong><br><small style="color:#888">Độ chắc: ${percent}%</small>`;
+                        document.getElementById('res-name').textContent = best.className;
+                        document.getElementById('res-badge').textContent = `Độ chắc chắn: ${percent}%`;
+                        document.getElementById('res-badge').className = `res-badge badge-tb`;
+                        document.getElementById('res-indicator').style.left = "50%";
+                        document.getElementById('res-tip').textContent = "Sản phẩm chưa có trong cơ sở dữ liệu.";
                     }
-                    resultText.style.display = 'block';
+                    
+                    // Chuyển từ màn hình quét sang màn hình kết quả
+                    document.getElementById('scan-screen').classList.remove('active');
+                    document.getElementById('result-screen').classList.add('active');
 
                 } catch (error) {
                     overlay.style.display = 'none';
